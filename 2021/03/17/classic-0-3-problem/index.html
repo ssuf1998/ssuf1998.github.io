@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN,default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16.png">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto Sans SC:300,300italic,400,400italic,700,700italic|Fira Code:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="0.1+0.2&#x3D;&#x3D;0.3为false？                          这个问题在红宝书[1]中就已经提及了，也是个很常见的面试题，只不过书中的解释不是那么让人满意，原理没有讲的很透彻。于是在这里把原理记录一下，同时也对JavaScript中数字的存储模式做一个梳理。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="经典的0.3问题">
+<meta property="og:url" content="http://example.com/2021/03/17/classic-0-3-problem/index.html">
+<meta property="og:site_name" content="suff1998dev">
+<meta property="og:description" content="0.1+0.2&#x3D;&#x3D;0.3为false？                          这个问题在红宝书[1]中就已经提及了，也是个很常见的面试题，只不过书中的解释不是那么让人满意，原理没有讲的很透彻。于是在这里把原理记录一下，同时也对JavaScript中数字的存储模式做一个梳理。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2021/03/17/classic-0-3-problem/IEEE_754_Double_Floating_Point_Format.gif">
+<meta property="article:published_time" content="2021-03-17T07:47:16.000Z">
+<meta property="article:modified_time" content="2021-03-18T09:52:42.129Z">
+<meta property="article:author" content="ssuf1998dev">
+<meta property="article:tag" content="JavaScript">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2021/03/17/classic-0-3-problem/IEEE_754_Double_Floating_Point_Format.gif">
+
+<link rel="canonical" href="http://example.com/2021/03/17/classic-0-3-problem/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>经典的0.3问题 | suff1998dev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">suff1998dev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">5</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">1</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">4</span></a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/03/17/classic-0-3-problem/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="ssuf1998dev">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="suff1998dev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          经典的0.3问题
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-17 15:47:16" itemprop="dateCreated datePublished" datetime="2021-03-17T15:47:16+08:00">2021-03-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-18 17:52:42" itemprop="dateModified" datetime="2021-03-18T17:52:42+08:00">2021-03-18</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%9D%A2%E7%BB%8F/" itemprop="url" rel="index"><span itemprop="name">面经</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>4 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote class="blockquote-center">
+            <i class="fa fa-quote-left"></i>
+            <p>0.1+0.2==0.3为false？</p>
+
+            <i class="fa fa-quote-right"></i>
+          </blockquote>
+<p>这个问题在红宝书<sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup>中就已经提及了，也是个很常见的面试题，只不过书中的解释不是那么让人满意，原理没有讲的很透彻。于是在这里把原理记录一下，同时也对JavaScript中数字的存储模式做一个梳理。</p>
+<span id="more"></span>
+<h3 id="01和02在js中究竟是多大"><a class="markdownIt-Anchor" href="#01和02在js中究竟是多大"></a> 0.1和0.2在js中究竟是多大？<sup class="footnote-ref"><a href="#fn2" id="fnref2">[2]</a></sup></h3>
+<p>既然已经知道0.1+0.2!=0.3，那么要探究所以然，就要知道0.1和0.2在js中究竟是个什么东西。计算机处理数据和进行计算，最终都会落到二进制上，对于0.1这样的浮点数来说，js需要一种二进制的保存方法来表达这样的数。</p>
+<p>那么js选择的是<strong>IEEE 754 双精度64位浮点数</strong><sup class="footnote-ref"><a href="#fn3" id="fnref3">[3]</a></sup>，具体存储方式如下图<sup class="footnote-ref"><a href="#fn4" id="fnref4">[4]</a></sup>所示。</p>
+<p><img src="IEEE_754_Double_Floating_Point_Format.gif" alt="IEEE 754 双精度64位浮点数" /></p>
+<p>可以看到，浮点数在js里由三部分组成：符号位、11位的指数位和<strong>52位</strong>的尾数位，所以一个数字可以通过如下公式表达出来。</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>s</mi><mo>∗</mo><mi>f</mi><mo>∗</mo><msup><mn mathvariant="italic">2</mn><mi>e</mi></msup></mrow><annotation encoding="application/x-tex">\it s * f * 2^e
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9088319999999999em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathit">s</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">∗</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord mathit">f</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">∗</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord"><span class="mord mathit">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7143919999999999em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">e</span></span></span></span></span></span></span></span></span></span></span></span></span></p>
+<p>那么接下来就可以通过这个公式得出0.1和0.2在js中的二进制表达。整数除二取余，倒序排列；小数乘二取正，顺序排列。</p>
+<p>那么0.1的二进制为0.0 0011 0011 0011…0011循环，而0.2为0.0011 0011 0011…0011循环，其实到这里就可以部分解释为什么0.1+0.2会出现结果不对（不准）的情况，一个循环数字是无法在计算机中准确表达和存储的。接下来，使用上述的方法进行表示：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>e</mi><mn mathvariant="italic">0.1</mn></msub><mo>=</mo><mo>−</mo><mn mathvariant="italic">4</mn></mrow><annotation encoding="application/x-tex">\it e_{0.1} = -4
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8388800000000001em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord"><span class="mord mathit">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathit mtight">0</span><span class="mord mathit mtight">.</span><span class="mord mathit mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord">−</span><span class="mord mathit">4</span></span></span></span></span></span></p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>f</mi><mn mathvariant="italic">0.1</mn></msub><mo>=</mo><mn mathvariant="italic">1.1001100110011001100110011001100110011001100110011010</mn></mrow><annotation encoding="application/x-tex">\it f_{0.1} = 1.1001100110011001100110011001100110011001100110011010
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord"><span class="mord mathit">f</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathit mtight">0</span><span class="mord mathit mtight">.</span><span class="mord mathit mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord mathit">1</span><span class="mord mathit">.</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">0</span></span></span></span></span></span></p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>e</mi><mn mathvariant="italic">0.2</mn></msub><mo>=</mo><mo>−</mo><mn mathvariant="italic">3</mn></mrow><annotation encoding="application/x-tex">\it e_{0.2} = -3
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.79444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord"><span class="mord mathit">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathit mtight">0</span><span class="mord mathit mtight">.</span><span class="mord mathit mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord">−</span><span class="mord mathit">3</span></span></span></span></span></span></p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>f</mi><mn mathvariant="italic">0.2</mn></msub><mo>=</mo><mn mathvariant="italic">1.1001100110011001100110011001100110011001100110011010</mn></mrow><annotation encoding="application/x-tex">\it f_{0.2} = 1.1001100110011001100110011001100110011001100110011010
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord"><span class="mord mathit">f</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathit mtight">0</span><span class="mord mathit mtight">.</span><span class="mord mathit mtight">2</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord mathit">1</span><span class="mord mathit">.</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">0</span></span></span></span></span></span></p>
+<p>到这里就得到了js眼中，也就是计算机眼中的0.1和0.2了。</p>
+<h3 id="二者相加时发生了什么"><a class="markdownIt-Anchor" href="#二者相加时发生了什么"></a> 二者相加时发生了什么</h3>
+<p>相加时有个点需要注意，两者指数不同，需要挪个位使之对齐，类似于竖式计算中的补零操作，只不过在这里一般右移，这会导致小数部分超过<strong>52位</strong>，右移溢出低位数字，对精度影响不大，<strong>但这又是一处导致计算结果不对的地方了</strong>。之后会得到这样的结果。</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>e</mi><mi>y</mi></msub><mo>=</mo><mo>−</mo><mn mathvariant="italic">3</mn></mrow><annotation encoding="application/x-tex">\it e_y = -3
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9305479999999999em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord"><span class="mord mathit">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">y</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord">−</span><span class="mord mathit">3</span></span></span></span></span></span></p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>f</mi><mi>y</mi></msub><mo>=</mo><mn mathvariant="italic">10.0110011001100110011001100110011001100110011001100111</mn></mrow><annotation encoding="application/x-tex">\it f_y = 10.0110011001100110011001100110011001100110011001100111
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.980548em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord"><span class="mord mathit">f</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">y</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">.</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">1</span></span></span></span></span></span></p>
+<p>接着保留一位整数，发现小数部分位数超过<strong>52位</strong>了，这里不再使用右移溢出的方法了，而是四舍五入优先考虑偶数，<strong>因此再一次损失了精度</strong>。</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>e</mi><mi>y</mi></msub><mo>=</mo><mo>−</mo><mn mathvariant="italic">2</mn></mrow><annotation encoding="application/x-tex">\it e_y = -2
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9305479999999999em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord"><span class="mord mathit">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">y</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord">−</span><span class="mord mathit">2</span></span></span></span></span></span></p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>f</mi><mi>y</mi></msub><mo>=</mo><mn mathvariant="italic">1.0011001100110011001100110011001100110011001100110100</mn></mrow><annotation encoding="application/x-tex">\it f_y = 1.0011001100110011001100110011001100110011001100110100
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.980548em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord"><span class="mord mathit">f</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">y</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord mathit">1</span><span class="mord mathit">.</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span></span></span></span></span></span></p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>y</mi><mrow><mo stretchy="false">(</mo><mn mathvariant="italic">2</mn><mo stretchy="false">)</mo></mrow></msub><mo>=</mo><msub><mi>f</mi><mi>y</mi></msub><mo>∗</mo><msup><mn mathvariant="italic">2</mn><msub><mi>e</mi><mi>y</mi></msub></msup><mo>=</mo><mn mathvariant="italic">0.010011001100110011001100110011001100110011001100110100</mn></mrow><annotation encoding="application/x-tex">\it y_{(2)}=f_y*2^{e_y}=0.010011001100110011001100110011001100110011001100110100
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0695919999999999em;vertical-align:-0.3551999999999999em;"></span><span class="mord"><span class="mord"><span class="mord mathit">y</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.5198em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mopen mtight">(</span><span class="mord mathit mtight">2</span><span class="mclose mtight">)</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.3551999999999999em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord"><span class="mord mathit">f</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139200000000003em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathit mtight">y</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">∗</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord"><span class="mord mathit">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7143919999999999em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathit mtight">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.16454285714285716em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathit mtight">y</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2818857142857143em;"><span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord mathit">0</span><span class="mord mathit">.</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">1</span><span class="mord mathit">0</span><span class="mord mathit">0</span></span></span></span></span></span></p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>y</mi><mrow><mo stretchy="false">(</mo><mn mathvariant="italic">10</mn><mo stretchy="false">)</mo></mrow></msub><mo>=</mo><mn mathvariant="italic">0.30000000000000004</mn></mrow><annotation encoding="application/x-tex">\it y_{(10)}=0.30000000000000004
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9996399999999999em;vertical-align:-0.3551999999999999em;"></span><span class="mord"><span class="mord"><span class="mord mathit">y</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.34480000000000005em;"><span style="top:-2.5198em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mopen mtight">(</span><span class="mord mathit mtight">1</span><span class="mord mathit mtight">0</span><span class="mclose mtight">)</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.3551999999999999em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord mathit">0</span><span class="mord mathit">.</span><span class="mord mathit">3</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">0</span><span class="mord mathit">4</span></span></span></span></span></span></p>
+<p>最后得出的答案和js中直接0.1+0.2得出的一致。</p>
+<h3 id="扩展"><a class="markdownIt-Anchor" href="#扩展"></a> 扩展</h3>
+<p>其实在这个问题的探究上，还能获得js中最大最小值的计算方法。回到IEEE 754 双精度64位浮点数的定义中，根据ECMAScript 5 规范，e的范围是[-1074, 971]，这样可以计算出Number.MAX_VALUE和Number.MIN_VALUE的值。</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>N</mi><mi>u</mi><mi>m</mi><mi>b</mi><mi>e</mi><mi>r</mi><mi>.</mi><mi>M</mi><mi>A</mi><mi>X</mi><mi>_</mi><mi>V</mi><mi>A</mi><mi>L</mi><mi>U</mi><mi>E</mi><mo>=</mo><mn mathvariant="italic">1</mn><mo>∗</mo><mo stretchy="false">(</mo><msup><mn mathvariant="italic">2</mn><mn mathvariant="italic">53</mn></msup><mo>−</mo><mn mathvariant="italic">1</mn><mo stretchy="false">)</mo><mo>∗</mo><mo stretchy="false">(</mo><msup><mn mathvariant="italic">2</mn><mn mathvariant="italic">971</mn></msup><mo stretchy="false">)</mo><mo>≈</mo><mn mathvariant="italic">1.79</mn><mi>e</mi><mo>+</mo><mn mathvariant="italic">308</mn></mrow><annotation encoding="application/x-tex">\it Number.MAX\_VALUE = 1 * (2^{53} - 1) * (2^{971}) \approx 1.79e+308
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.174108em;vertical-align:-0.31em;"></span><span class="mord"><span class="mord mathit">N</span><span class="mord mathit">u</span><span class="mord mathit">m</span><span class="mord mathit">b</span><span class="mord mathit">e</span><span class="mord mathit">r</span><span class="mord mathit">.</span><span class="mord mathit">M</span><span class="mord mathit">A</span><span class="mord mathit">X</span><span class="mord mathit">_</span><span class="mord mathit">V</span><span class="mord mathit">A</span><span class="mord mathit">L</span><span class="mord mathit">U</span><span class="mord mathit">E</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord mathit">1</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">∗</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathit">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641079999999999em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathit mtight">5</span><span class="mord mathit mtight">3</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord mathit">1</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">∗</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathit">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.864108em;"><span style="top:-3.1130000000000004em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathit mtight">9</span><span class="mord mathit mtight">7</span><span class="mord mathit mtight">1</span></span></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">≈</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord mathit">1</span><span class="mord mathit">.</span><span class="mord mathit">7</span><span class="mord mathit">9</span><span class="mord mathit">e</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord mathit">3</span><span class="mord mathit">0</span><span class="mord mathit">8</span></span></span></span></span></span></p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>N</mi><mi>u</mi><mi>m</mi><mi>b</mi><mi>e</mi><mi>r</mi><mi>.</mi><mi>M</mi><mi>I</mi><mi>N</mi><mi>_</mi><mi>V</mi><mi>A</mi><mi>L</mi><mi>U</mi><mi>E</mi><mo>=</mo><mn mathvariant="italic">1</mn><mo>∗</mo><mn mathvariant="italic">1</mn><mo>∗</mo><mo stretchy="false">(</mo><msup><mn mathvariant="italic">2</mn><mrow><mo>−</mo><mn mathvariant="italic">1074</mn></mrow></msup><mo stretchy="false">)</mo><mo>≈</mo><mn mathvariant="italic">5</mn><mi>e</mi><mo>−</mo><mn mathvariant="italic">324</mn></mrow><annotation encoding="application/x-tex">\it Number.MIN\_VALUE = 1 * 1 * (2^{-1074}) \approx 5e-324
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.174108em;vertical-align:-0.31em;"></span><span class="mord"><span class="mord mathit">N</span><span class="mord mathit">u</span><span class="mord mathit">m</span><span class="mord mathit">b</span><span class="mord mathit">e</span><span class="mord mathit">r</span><span class="mord mathit">.</span><span class="mord mathit">M</span><span class="mord mathit">I</span><span class="mord mathit">N</span><span class="mord mathit">_</span><span class="mord mathit">V</span><span class="mord mathit">A</span><span class="mord mathit">L</span><span class="mord mathit">U</span><span class="mord mathit">E</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord mathit">1</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">∗</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord mathit">1</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">∗</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathit">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.864108em;"><span style="top:-3.1130000000000004em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mathit mtight">1</span><span class="mord mathit mtight">0</span><span class="mord mathit mtight">7</span><span class="mord mathit mtight">4</span></span></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">≈</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mord mathit">5</span><span class="mord mathit">e</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord mathit">3</span><span class="mord mathit">2</span><span class="mord mathit">4</span></span></span></span></span></span></p>
+<hr class="footnotes-sep" />
+<section class="footnotes">
+<ol class="footnotes-list">
+<li id="fn1" class="footnote-item"><p>《JavaScript高级程序设计（第3版）》 <a href="#fnref1" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn2" class="footnote-item"><p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/95318421">详解js中0.1+0.2!=0.3 - 知乎</a> <a href="#fnref2" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn3" class="footnote-item"><p><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Floating-point_arithmetic#Internal_representation">Floating-point arithmetic - Wikipedia</a> <a href="#fnref3" class="footnote-backref">↩︎</a></p>
+</li>
+<li id="fn4" class="footnote-item"><p><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Double-precision_floating-point_format">Double-precision floating-point format - Wikipedia</a> <a href="#fnref4" class="footnote-backref">↩︎</a></p>
+</li>
+</ol>
+</section>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/JavaScript/" rel="tag"><i class="fa fa-tag"></i> JavaScript</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/03/16/throttle-debounce/" rel="prev" title="throttle & debounce">
+      <i class="fa fa-chevron-left"></i> throttle & debounce
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#01%E5%92%8C02%E5%9C%A8js%E4%B8%AD%E7%A9%B6%E7%AB%9F%E6%98%AF%E5%A4%9A%E5%A4%A7"><span class="nav-number">1.</span> <span class="nav-text"> 0.1和0.2在js中究竟是多大？[2]</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8C%E8%80%85%E7%9B%B8%E5%8A%A0%E6%97%B6%E5%8F%91%E7%94%9F%E4%BA%86%E4%BB%80%E4%B9%88"><span class="nav-number">2.</span> <span class="nav-text"> 二者相加时发生了什么</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%A9%E5%B1%95"><span class="nav-number">3.</span> <span class="nav-text"> 扩展</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ssuf1998dev"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">ssuf1998dev</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/ssuf1998" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;ssuf1998" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ssuf1998dev</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css">
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -15,7 +15,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"right","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
   <meta property="og:type" content="website">
@@ -123,7 +123,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">3</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">4</span></a>
 
   </li>
   </ul>
@@ -153,6 +153,107 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN,default">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/03/17/classic-0-3-problem/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="ssuf1998dev">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="suff1998dev">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/03/17/classic-0-3-problem/" class="post-title-link" itemprop="url">经典的0.3问题</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-17 15:47:16" itemprop="dateCreated datePublished" datetime="2021-03-17T15:47:16+08:00">2021-03-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-18 17:52:42" itemprop="dateModified" datetime="2021-03-18T17:52:42+08:00">2021-03-18</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%9D%A2%E7%BB%8F/" itemprop="url" rel="index"><span itemprop="name">面经</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>4 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote class="blockquote-center">
+            <i class="fa fa-quote-left"></i>
+            <p>0.1+0.2==0.3为false？</p>
+
+            <i class="fa fa-quote-right"></i>
+          </blockquote>
+<p>这个问题在红宝书<sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup>中就已经提及了，也是个很常见的面试题，只不过书中的解释不是那么让人满意，原理没有讲的很透彻。于是在这里把原理记录一下，同时也对JavaScript中数字的存储模式做一个梳理。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/03/17/classic-0-3-problem/" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN,default">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/03/16/throttle-debounce/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -176,10 +277,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2021-03-16 23:43:06 / 修改时间：23:44:53" itemprop="dateCreated datePublished" datetime="2021-03-16T23:43:06+08:00">2021-03-16</time>
+              <time title="创建时间：2021-03-16 23:43:06" itemprop="dateCreated datePublished" datetime="2021-03-16T23:43:06+08:00">2021-03-16</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-18 16:10:41" itemprop="dateModified" datetime="2021-03-18T16:10:41+08:00">2021-03-18</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -223,7 +330,7 @@
           </blockquote>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/03/16/throttle-debounce/#more" rel="contents">
+              <a class="btn" href="/2021/03/16/throttle-debounce/" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -270,10 +377,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2021-03-16 22:10:04 / 修改时间：23:25:42" itemprop="dateCreated datePublished" datetime="2021-03-16T22:10:04+08:00">2021-03-16</time>
+              <time title="创建时间：2021-03-16 22:10:04" itemprop="dateCreated datePublished" datetime="2021-03-16T22:10:04+08:00">2021-03-16</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-18 16:10:49" itemprop="dateModified" datetime="2021-03-18T16:10:49+08:00">2021-03-18</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -290,7 +403,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>2k</span>
+              <span>2.1k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -319,7 +432,7 @@
 <p>xss即跨站脚本攻击（Cross Site Scripting），是指恶意攻击者向Web页面里插入恶意脚本代码，当用户浏览该页之时，嵌入其中脚本会被执行，从而达到恶意攻击用户的目的<sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup>。该攻击可分为三类：反射型、持久性和DOM型。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/03/16/xss-and-csrf/#more" rel="contents">
+              <a class="btn" href="/2021/03/16/xss-and-csrf/" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -366,10 +479,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2021-03-16 22:07:50 / 修改时间：22:08:22" itemprop="dateCreated datePublished" datetime="2021-03-16T22:07:50+08:00">2021-03-16</time>
+              <time title="创建时间：2021-03-16 22:07:50" itemprop="dateCreated datePublished" datetime="2021-03-16T22:07:50+08:00">2021-03-16</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-18 16:10:31" itemprop="dateModified" datetime="2021-03-18T16:10:31+08:00">2021-03-18</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -414,7 +533,7 @@
 <p>刚入门前端开发就被教导script标签要尽量放在底部，具体来说，推荐放在body标签闭合之前，原因之一是为了防止js在加载执行时<strong>阻塞DOM的渲染</strong>，从而造成首页的短暂白屏或是页面加载不完整等影响用户体验的情况发生。而async和defer正是为了解决这个问题而诞生的，但二者之间有一定的差异，在这里加以总结。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/03/16/script-tag-s-async-defer/#more" rel="contents">
+              <a class="btn" href="/2021/03/16/script-tag-s-async-defer/" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -502,7 +621,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-count">4</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -553,7 +672,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">ssuf1998dev</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
   </div>
 
         
@@ -573,13 +692,14 @@
   <script src="/lib/anime.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css">
 
 <script src="/js/utils.js"></script>
 
 <script src="/js/motion.js"></script>
 
 
-<script src="/js/schemes/pisces.js"></script>
+<script src="/js/schemes/muse.js"></script>
 
 
 <script src="/js/next-boot.js"></script>
@@ -602,6 +722,8 @@
 
 
 
+
+  
 
   
 
