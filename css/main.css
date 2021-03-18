@@ -1192,7 +1192,7 @@ pre .javascript .function {
 }
 .links-of-author a::before,
 .links-of-author span.exturl::before {
-  background: #ff8f0f;
+  background: #d79918;
   border-radius: 50%;
   content: ' ';
   display: inline-block;
@@ -2427,7 +2427,7 @@ hr {
   font-size: 0.8125em;
   margin: 0 0.25rem;
 }
-.post-body p {
+.post-body>p {
   text-indent: 2em;
 }
 .post-body .blockquote-center:after {
@@ -2453,7 +2453,7 @@ hr {
   white-space: normal !important;
   text-align: center !important;
 }
-@media (max-width: 991px) {
+@media (max-width: 640px) {
   .post-body .katex {
     font-size: 0.9rem;
   }
